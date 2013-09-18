@@ -1,5 +1,8 @@
 *.py[cod]
 
+# Generated images
+*.png
+
 # C extensions
 *.so
 
