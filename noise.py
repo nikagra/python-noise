@@ -2,6 +2,9 @@
 
 import random, math, Image
 
+"""
+Texture generation using Perlin noise
+"""
 class NoiseUtils:
     
     def __init__(self, imageSize):
