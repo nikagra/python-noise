@@ -2,6 +2,9 @@
 
 import random, math, Image
 
+def lerp(x, y, a):
+    return x * (1 - a) + y * a
+
 """
 Texture generation using Perlin noise
 """
@@ -13,6 +16,7 @@ class NoiseUtils:
 
         self.grid = [[]]
         self.gradients = []
+        self.values = []
         self.permutations = []
         self.img = {}
 
@@ -28,6 +32,9 @@ class NoiseUtils:
                     self.gradients.append([x, y])
                     break
 
+        for j in range(self.gradientNumber):
+            self.values.append(random.randint(0, 255))
+
     def __normalizeGradientVectors(self):
         for i in range(self.gradientNumber):
             x, y = self.gradients[i][0], self.gradients[i][1]
@@ -42,8 +49,25 @@ class NoiseUtils:
             self.permutations[i], self.permutations[j] = \
                 self.permutations[j], self.permutations[i]
 
-    def getGradientIndex(self, x, y):
-        return self.permutations[(x + self.permutations[y % self.gradientNumber]) % self.gradientNumber]
+    def getHashedIndex(self, x, y):
+        return (x + self.permutations[y % self.gradientNumber]) % self.gradientNumber
+
+    def valueNoise(self, x, y):
+        qx0 = int(math.floor(x))
+        qx1 = qx0 + 1
+
+        qy0 = int(math.floor(y))
+        qy1 = qy0 + 1
+
+        v00 = self.values[self.getHashedIndex(qx0, qy0)]
+        v01 = self.values[self.getHashedIndex(qx1, qy0)]
+        v10 = self.values[self.getHashedIndex(qx0, qy1)]
+        v11 = self.values[self.getHashedIndex(qx1, qy1)]
+
+        tx = (x - math.floor(x))
+        ty = (y - math.floor(y))
+
+        return lerp(lerp(v00, v01, tx), lerp(v10, v11, tx), ty);
 
     def perlinNoise(self, x, y):
         qx0 = int(math.floor(x))
@@ -52,10 +76,10 @@ class NoiseUtils:
         qy0 = int(math.floor(y))
         qy1 = qy0 + 1
 
-        q00 = self.getGradientIndex(qx0, qy0)
-        q01 = self.getGradientIndex(qx1, qy0)
-        q10 = self.getGradientIndex(qx0, qy1)
-        q11 = self.getGradientIndex(qx1, qy1)
+        q00 = self.getHashedIndex(qx0, qy0)
+        q01 = self.getHashedIndex(qx1, qy0)
+        q10 = self.getHashedIndex(qx0, qy1)
+        q11 = self.getHashedIndex(qx1, qy1)
 
         tx0 = x - math.floor(x)
         tx1 = tx0 - 1
@@ -97,7 +121,7 @@ class NoiseUtils:
                 self.img[i, j] = (int) ((noise[i, j] - min) / (max - min) * 255 )
 
     def fractalBrownianMotion(self, x, y, func):
-        octaves = 12
+        octaves = 8
         amplitude = 1.0
         frequency = 1.0 / self.imageSize
         persistence = 0.5
@@ -108,11 +132,14 @@ class NoiseUtils:
             amplitude *= persistence
         return value
 
+    def value(self, x, y):
+        return self.fractalBrownianMotion(4 * x, 4 * y, self.valueNoise)
+
     def cloud(self, x, y, func = None):
         if func is None:
             func = self.perlinNoise
 
-        return self.fractalBrownianMotion(8 * x, 8 * y, func)
+        return self.fractalBrownianMotion(4 * x, 4 * y, func)
 
     def wood(self, x, y, noise = None):
         if noise is None:
