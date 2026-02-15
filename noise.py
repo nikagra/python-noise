@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
-import random, math, Image
+from PIL import Image
+import random, math
 
 """
 Texture generation using Perlin noise
